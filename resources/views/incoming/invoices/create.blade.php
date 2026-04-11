@@ -40,7 +40,7 @@
             <div class="alert alert-danger">{{ $message }}</div>
             @enderror
 
-            <!-- Временная статическая одна строка, в ветке 3 сделаем динамический JS -->
+
             <div class="row mb-2">
                 <div class="col-md-5">
                     <select name="items[0][product_id]" class="form-select" required>

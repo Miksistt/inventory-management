@@ -56,7 +56,45 @@
                 @endif
             </div>
         </div>
+        <div class="mb-4">
+            @can('update', $invoice)
+                <a href="{{ route('incoming.invoices.edit', $invoice) }}" class="btn btn-warning">
+                    ✏️ Редактировать
+                </a>
+            @endcan
 
+            @if($invoice->isDraft())
+                @can('post', $invoice)
+                    <form action="{{ route('incoming.invoices.post', $invoice) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button class="btn btn-success" onclick="return confirm('Провести накладную? Остатки будут изменены.')">
+                            ✅ Провести
+                        </button>
+                    </form>
+                @endcan
+            @endif
+
+            @if($invoice->isPosted())
+                @can('cancel', $invoice)
+                    <form action="{{ route('incoming.invoices.cancel', $invoice) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button class="btn btn-danger" onclick="return confirm('Отменить накладную? Остатки будут уменьшены.')">
+                            ❌ Отменить
+                        </button>
+                    </form>
+                @endcan
+            @endif
+
+            @can('delete', $invoice)
+                <form action="{{ route('incoming.invoices.destroy', $invoice) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button class="btn btn-outline-danger" onclick="return confirm('Удалить накладную?')">
+                        🗑️ Удалить
+                    </button>
+                </form>
+            @endcan
+        </div>
         <h5>Позиции накладной</h5>
         <div class="table-responsive mb-4">
             <table class="table table-bordered">

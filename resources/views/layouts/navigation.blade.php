@@ -16,6 +16,11 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                 </div>
+                @can('manage-inventory')
+                    <x-nav-link :href="route('incoming.invoices.index')" :active="request()->routeIs('incoming.invoices.*')">
+                        {{ __('Приходные накладные') }}
+                    </x-nav-link>
+                @endcan
             </div>
 
             <!-- Settings Dropdown -->
