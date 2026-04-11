@@ -10,6 +10,12 @@
                     </a>
                 </div>
 
+                @can('access-admin-panel')
+                    <x-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.*')">
+                        {{ __('Админ-панель') }}
+                    </x-nav-link>
+                @endcan
+
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
