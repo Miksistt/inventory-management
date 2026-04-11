@@ -30,8 +30,18 @@ class User extends Authenticatable
         ];
     }
 
-    public function hasRole(string $role): bool
+    public function isAdmin(): bool
     {
-        return $this->role === $role;
+        return $this->role === 'admin';
+    }
+
+    public function isStorekeeper(): bool
+    {
+        return $this->role === 'storekeeper';
+    }
+
+    public function isManager(): bool
+    {
+        return $this->role === 'manager';
     }
 }
