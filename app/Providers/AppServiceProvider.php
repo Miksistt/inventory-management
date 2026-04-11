@@ -15,6 +15,11 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
+    /**
+     * Bootstrap any application services.
+     *
+     * @noinspection PhpParamsInspection
+     */
     public function boot(): void
     {
         Gate::define('manage-inventory', function (User $user) {
