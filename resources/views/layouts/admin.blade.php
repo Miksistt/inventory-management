@@ -32,12 +32,13 @@
                         <i class="bi bi-rulers"></i> Единицы
                     </a>
                 </li>
-                {{--
+
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.suppliers.index') }}">
+                    <a class="nav-link {{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}" href="{{ route('admin.suppliers.index') }}">
                         <i class="bi bi-truck"></i> Поставщики
                     </a>
                 </li>
+                {{--
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('admin.products.index') }}">
                         <i class="bi bi-box"></i> Товары
