@@ -25,8 +25,9 @@ class SupplierController extends Controller
             'name' => 'required|string|max:255',
             'contact_person' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
+            'email' => 'nullable|email|max:255|unique:suppliers',
             'address' => 'nullable|string',
+
         ]);
 
         Supplier::create($validated);
@@ -50,7 +51,7 @@ class SupplierController extends Controller
             'name' => 'required|string|max:255',
             'contact_person' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
+            'email' => 'nullable|email|max:255|unique:suppliers,email,' . $supplier->id,
             'address' => 'nullable|string',
         ]);
 
@@ -61,8 +62,14 @@ class SupplierController extends Controller
 
     public function destroy(Supplier $supplier)
     {
+        if ($supplier->incomingInvoices()->exists()) {
+            return redirect()->back()
+                ->with('error', 'Нельзя удалить поставщика: к нему привязаны приходные накладные.');
+        }
+
         $supplier->delete();
 
-        return redirect()->route('admin.suppliers.index')->with('success', 'Поставщик удалён');
+        return redirect()->route('admin.suppliers.index')
+            ->with('success', 'Поставщик удалён');
     }
 }
