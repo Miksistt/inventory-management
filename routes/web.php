@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\UnitController;
+use App\Http\Controllers\Admin\SupplierController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -22,5 +23,6 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'can:access-admin-panel'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('categories', CategoryController::class);
     Route::resource('units', UnitController::class);
+    Route::resource('suppliers', SupplierController::class);
 });
 require __DIR__.'/auth.php';
