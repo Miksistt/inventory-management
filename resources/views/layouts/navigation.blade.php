@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+[15.04.2026 21:08] NoName: <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -53,7 +53,7 @@
                         <x-dropdown-link :href="route('profile.edit')">
                             {{ ('Profile') }}
                         </x-dropdown-link>
-                        <!-- Authentication -->
+                        [15.04.2026 21:08] NoName: <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
