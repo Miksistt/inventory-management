@@ -163,196 +163,6 @@ vite.config.js
 <files>
 This section contains the contents of the repository's files.
 
-<file path="app/Policies/IncomingInvoicePolicy.php">
-<?php
-
-namespace App\Policies;
-
-use App\Models\User;
-use App\Models\IncomingInvoice;
-
-class IncomingInvoicePolicy
-{
-    public function viewAny(User $user): bool
-    {
-        return true;
-    }
-
-    public function view(User $user, IncomingInvoice $invoice): bool
-    {
-        return true;
-    }
-
-    public function create(User $user): bool
-    {
-        return in_array($user->role, ['admin', 'storekeeper']);
-    }
-
-    public function update(User $user, IncomingInvoice $invoice): bool
-    {
-        return in_array($user->role, ['admin', 'storekeeper']) && $invoice->isDraft();
-    }
-
-    public function delete(User $user, IncomingInvoice $invoice): bool
-    {
-        return $user->role === 'admin';
-    }
-
-    public function post(User $user, IncomingInvoice $invoice): bool
-    {
-        return in_array($user->role, ['admin', 'storekeeper']);
-    }
-
-    public function cancel(User $user, IncomingInvoice $invoice): bool
-    {
-        return in_array($user->role, ['admin', 'storekeeper']);
-    }
-}
-</file>
-
-<file path="database/migrations/2026_04_10_065505_add_role_to_users_table.php">
-<?php
-
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['admin', 'storekeeper', 'manager'])->default('manager')->after('password');
-        });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role');
-        });
-    }
-};
-</file>
-
-<file path="database/seeders/UserSeeder.php">
-<?php
-
-namespace Database\Seeders;
-
-use App\Models\User;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-
-class UserSeeder extends Seeder
-{
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
-    {
-        User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@test.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-        ]);
-
-        User::create([
-            'name' => 'Storekeeper User',
-            'email' => 'storekeeper@test.com',
-            'password' => Hash::make('password'),
-            'role' => 'storekeeper',
-        ]);
-
-        User::create([
-            'name' => 'Manager User',
-            'email' => 'manager@test.com',
-            'password' => Hash::make('password'),
-            'role' => 'manager',
-        ]);
-    }
-}
-</file>
-
-<file path="resources/views/incoming/invoices/edit.blade.php">
-@extends('layouts.app')
-
-@section('content')
-    <div class="container">
-        <h4 class="mb-4">Редактирование накладной №{{ $invoice->invoice_number }}</h4>
-
-        <form action="{{ route('incoming.invoices.update', $invoice) }}" method="POST">
-            @csrf
-            @method('PUT')
-
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <label class="form-label">Номер накладной</label>
-                    <input type="text" class="form-control" value="{{ $invoice->invoice_number }}" readonly>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Дата <span class="text-danger">*</span></label>
-                    <input type="date" name="invoice_date" class="form-control @error('invoice_date') is-invalid @enderror"
-                           value="{{ old('invoice_date', $invoice->invoice_date->format('Y-m-d')) }}" required>
-                    @error('invoice_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Поставщик <span class="text-danger">*</span></label>
-                    <select name="supplier_id" class="form-select @error('supplier_id') is-invalid @enderror" required>
-                        <option value="">— Выберите поставщика —</option>
-                        @foreach($suppliers as $s)
-                            <option value="{{ $s->id }}" @selected(old('supplier_id', $invoice->supplier_id) == $s->id)>{{ $s->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('supplier_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Комментарий</label>
-                <textarea name="comment" class="form-control" rows="2">{{ old('comment', $invoice->comment) }}</textarea>
-            </div>
-
-            <h5>Позиции накладной</h5>
-            @error('items')
-            <div class="alert alert-danger">{{ $message }}</div>
-            @enderror
-
-            @foreach($invoice->items as $index => $item)
-                <div class="row mb-2">
-                    <div class="col-md-5">
-                        <select name="items[{{ $index }}][product_id]" class="form-select" required>
-                            <option value="">— Выберите товар —</option>
-                            @foreach($products as $p)
-                                <option value="{{ $p->id }}" @selected($item->product_id == $p->id)>{{ $p->sku }} — {{ $p->name }} ({{ $p->unit->abbreviation }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" name="items[{{ $index }}][quantity]" class="form-control" placeholder="Кол-во" min="0.01" step="0.01" value="{{ $item->quantity }}" required>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" name="items[{{ $index }}][unit_price]" class="form-control" placeholder="Цена" min="0" step="0.01" value="{{ $item->unit_price }}" required>
-                    </div>
-                </div>
-            @endforeach
-
-            <div class="d-flex gap-2 mt-4">
-                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                <a href="{{ route('incoming.invoices.show', $invoice) }}" class="btn btn-outline-secondary">Отмена</a>
-            </div>
-        </form>
-    </div>
-@endsection
-</file>
-
 <file path=".editorconfig">
 root = true
 
@@ -841,188 +651,6 @@ abstract class Controller
 }
 </file>
 
-<file path="app/Http/Controllers/IncomingInvoiceController.php">
-<?php
-
-namespace App\Http\Controllers;
-
-use App\Models\IncomingInvoice;
-use App\Models\Product;
-use App\Models\Supplier;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-
-class IncomingInvoiceController extends Controller
-{
-    public function index()
-    {
-        $invoices = IncomingInvoice::with(['supplier', 'user'])
-            ->latest()
-            ->paginate(15);
-
-        return view('incoming.invoices.index', compact('invoices'));
-    }
-
-    public function create()
-    {
-        $suppliers = Supplier::orderBy('name')->get();
-        $products = Product::with('unit')->orderBy('name')->get();
-        $number = IncomingInvoice::generateNumber();
-
-        return view('incoming.invoices.create', compact('suppliers', 'products', 'number'));
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'invoice_date' => 'required|date',
-            'supplier_id' => 'required|exists:suppliers,id',
-            'comment' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-        ]);
-
-        $invoice = IncomingInvoice::create([
-            'invoice_number' => IncomingInvoice::generateNumber(),
-            'invoice_date' => $request->invoice_date,
-            'supplier_id' => $request->supplier_id,
-            'user_id' => auth()->id(),
-            'comment' => $request->comment,
-            'status' => 'draft',
-            'total_amount' => 0,
-        ]);
-
-        $total = 0;
-        foreach ($request->items as $item) {
-            $lineTotal = $item['quantity'] * $item['unit_price'];
-            $total += $lineTotal;
-            $invoice->items()->create([
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['unit_price'],
-                'total' => $lineTotal,
-            ]);
-        }
-
-        $invoice->update(['total_amount' => $total]);
-
-        return redirect()->route('incoming.invoices.show', $invoice)
-            ->with('success', 'Приходная накладная создана. Статус: черновик.');
-    }
-
-    public function show(IncomingInvoice $invoice)
-    {
-        $invoice->load(['supplier', 'user', 'items.product.unit']);
-        return view('incoming.invoices.show', compact('invoice'));
-    }
-
-    public function edit(IncomingInvoice $invoice)
-    {
-        $this->authorize('update', $invoice);
-
-        $suppliers = Supplier::orderBy('name')->get();
-        $products = Product::with('unit')->orderBy('name')->get();
-        $invoice->load('items');
-
-        return view('incoming.invoices.edit', compact('invoice', 'suppliers', 'products'));
-    }
-
-    public function update(Request $request, IncomingInvoice $invoice)
-    {
-        $this->authorize('update', $invoice);
-
-        $request->validate([
-            'invoice_date' => 'required|date',
-            'supplier_id' => 'required|exists:suppliers,id',
-            'comment' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-        ]);
-
-        $invoice->update([
-            'invoice_date' => $request->invoice_date,
-            'supplier_id' => $request->supplier_id,
-            'comment' => $request->comment,
-        ]);
-
-        $invoice->items()->delete();
-
-        $total = 0;
-        foreach ($request->items as $item) {
-            $lineTotal = $item['quantity'] * $item['unit_price'];
-            $total += $lineTotal;
-            $invoice->items()->create([
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['unit_price'],
-                'total' => $lineTotal,
-            ]);
-        }
-
-        $invoice->update(['total_amount' => $total]);
-
-        return redirect()->route('incoming.invoices.show', $invoice)
-            ->with('success', 'Накладная обновлена.');
-    }
-
-    public function destroy(IncomingInvoice $invoice)
-    {
-        $this->authorize('delete', $invoice);
-        $invoice->delete();
-        return redirect()->route('incoming.invoices.index')
-            ->with('success', 'Накладная удалена.');
-    }
-
-    public function post(IncomingInvoice $invoice)
-    {
-        $this->authorize('post', $invoice);
-
-        if (!$invoice->isDraft()) {
-            return redirect()->back()
-                ->with('error', 'Провести можно только накладную в статусе "Черновик".');
-        }
-
-        $invoice->load('items.product');
-
-        DB::transaction(function () use ($invoice) {
-            foreach ($invoice->items as $item) {
-                $item->product->increment('stock_quantity', $item->quantity);
-            }
-            $invoice->update(['status' => 'posted']);
-        });
-
-        return redirect()->route('incoming.invoices.show', $invoice)
-            ->with('success', 'Накладная проведена. Остатки товаров увеличены.');
-    }
-
-    public function cancel(IncomingInvoice $invoice)
-    {
-        $this->authorize('cancel', $invoice);
-
-        if (!$invoice->isPosted()) {
-            return redirect()->back()
-                ->with('error', 'Отменить можно только проведённую накладную.');
-        }
-
-        $invoice->load('items.product');
-
-        DB::transaction(function () use ($invoice) {
-            foreach ($invoice->items as $item) {
-                $item->product->decrement('stock_quantity', $item->quantity);
-            }
-            $invoice->update(['status' => 'cancelled']);
-        });
-
-        return redirect()->route('incoming.invoices.show', $invoice)
-            ->with('success', 'Накладная отменена. Остатки товаров скорректированы.');
-    }
-}
-</file>
-
 <file path="app/Http/Controllers/ProfileController.php">
 <?php
 
@@ -1305,89 +933,49 @@ class IncomingInvoiceItem extends Model
 }
 </file>
 
-<file path="app/Models/User.php">
+<file path="app/Policies/IncomingInvoicePolicy.php">
 <?php
 
-namespace App\Models;
-
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-
-#[Fillable(['name', 'email', 'password', 'role'])]
-#[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
-{
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
-
-    public function isAdmin(): bool
-    {
-        return $this->role === 'admin';
-    }
-
-    public function isStorekeeper(): bool
-    {
-        return $this->role === 'storekeeper';
-    }
-
-    public function isManager(): bool
-    {
-        return $this->role === 'manager';
-    }
-}
-</file>
-
-<file path="app/Providers/AppServiceProvider.php">
-<?php
-
-namespace App\Providers;
+namespace App\Policies;
 
 use App\Models\User;
 use App\Models\IncomingInvoice;
-use App\Policies\IncomingInvoicePolicy;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\ServiceProvider;
 
-class AppServiceProvider extends ServiceProvider
+class IncomingInvoicePolicy
 {
-    public function register(): void
+    public function viewAny(User $user): bool
     {
-        //
+        return true;
     }
 
-    public function boot(): void
+    public function view(User $user, IncomingInvoice $invoice): bool
     {
-        Gate::define('manage-inventory', function (User $user) {
-            return in_array($user->role, ['admin', 'storekeeper']);
-        });
+        return true;
+    }
 
-        Gate::define('view-reports', function (User $user) {
-            return in_array($user->role, ['admin', 'manager', 'storekeeper']);
-        });
+    public function create(User $user): bool
+    {
+        return in_array($user->role, ['admin', 'storekeeper']);
+    }
 
-        Gate::define('access-admin-panel', function (User $user) {
-            return $user->role === 'admin';
-        });
+    public function update(User $user, IncomingInvoice $invoice): bool
+    {
+        return in_array($user->role, ['admin', 'storekeeper']) && $invoice->isDraft();
+    }
 
-        Gate::policy(IncomingInvoice::class, IncomingInvoicePolicy::class);
+    public function delete(User $user, IncomingInvoice $invoice): bool
+    {
+        return $user->role === 'admin';
+    }
+
+    public function post(User $user, IncomingInvoice $invoice): bool
+    {
+        return in_array($user->role, ['admin', 'storekeeper']);
+    }
+
+    public function cancel(User $user, IncomingInvoice $invoice): bool
+    {
+        return in_array($user->role, ['admin', 'storekeeper']);
     }
 }
 </file>
@@ -3014,6 +2602,37 @@ return new class extends Migration
 };
 </file>
 
+<file path="database/migrations/2026_04_10_065505_add_role_to_users_table.php">
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->enum('role', ['admin', 'storekeeper', 'manager'])->default('manager')->after('password');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('role');
+        });
+    }
+};
+</file>
+
 <file path="database/migrations/2026_04_11_081358_create_incoming_invoices_table.php">
 <?php
 
@@ -3073,52 +2692,42 @@ return new class extends Migration
 };
 </file>
 
-<file path="database/seeders/DatabaseSeeder.php">
+<file path="database/seeders/UserSeeder.php">
 <?php
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
-class DatabaseSeeder extends Seeder
+class UserSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
+     * Run the database seeds.
      */
     public function run(): void
     {
-        $this->call([
-            UserSeeder::class,
+        User::create([
+            'name' => 'Admin User',
+            'email' => 'admin@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
         ]);
-    }
-}
-</file>
 
-<file path="package.json">
-{
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "build": "vite build",
-        "dev": "vite"
-    },
-    "devDependencies": {
-        "@tailwindcss/forms": "^0.5.2",
-        "@tailwindcss/vite": "^4.0.0",
-        "@vitejs/plugin-vue": "^6.0.5",
-        "alpinejs": "^3.4.2",
-        "autoprefixer": "^10.4.2",
-        "axios": "^1.7.4",
-        "concurrently": "^9.0.1",
-        "laravel-vite-plugin": "^1.2.0",
-        "postcss": "^8.4.31",
-        "tailwindcss": "^3.1.0",
-        "vite": "^6.0.11"
-    },
-    "dependencies": {
-        "@popperjs/core": "^2.11.8",
-        "bootstrap": "^5.3.8",
-        "bootstrap-icons": "^1.13.1"
+        User::create([
+            'name' => 'Storekeeper User',
+            'email' => 'storekeeper@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'storekeeper',
+        ]);
+
+        User::create([
+            'name' => 'Manager User',
+            'email' => 'manager@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'manager',
+        ]);
     }
 }
 </file>
@@ -3222,22 +2831,6 @@ $app->handleRequest(Request::capture());
 <file path="public/robots.txt">
 User-agent: *
 Disallow:
-</file>
-
-<file path="resources/css/app.css">
-@import 'bootstrap/dist/css/bootstrap.min.css';
-@import 'bootstrap-icons/font/bootstrap-icons.css';
-</file>
-
-<file path="resources/js/app.js">
-import './bootstrap';
-import 'bootstrap/dist/js/bootstrap.bundle';
-
-import Alpine from 'alpinejs';
-
-window.Alpine = Alpine;
-
-Alpine.start();
 </file>
 
 <file path="resources/js/bootstrap.js">
@@ -3717,25 +3310,26 @@ $classes = ($active ?? false)
 </x-app-layout>
 </file>
 
-<file path="resources/views/incoming/invoices/create.blade.php">
+<file path="resources/views/incoming/invoices/edit.blade.php">
 @extends('layouts.app')
 
 @section('content')
     <div class="container">
-        <h4 class="mb-4">Новая приходная накладная</h4>
+        <h4 class="mb-4">Редактирование накладной №{{ $invoice->invoice_number }}</h4>
 
-        <form action="{{ route('incoming.invoices.store') }}" method="POST">
+        <form action="{{ route('incoming.invoices.update', $invoice) }}" method="POST">
             @csrf
+            @method('PUT')
 
             <div class="row mb-3">
                 <div class="col-md-3">
                     <label class="form-label">Номер накладной</label>
-                    <input type="text" class="form-control" value="{{ $number }}" readonly>
+                    <input type="text" class="form-control" value="{{ $invoice->invoice_number }}" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Дата <span class="text-danger">*</span></label>
                     <input type="date" name="invoice_date" class="form-control @error('invoice_date') is-invalid @enderror"
-                           value="{{ old('invoice_date', date('Y-m-d')) }}" required>
+                           value="{{ old('invoice_date', $invoice->invoice_date->format('Y-m-d')) }}" required>
                     @error('invoice_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-md-4">
@@ -3743,7 +3337,7 @@ $classes = ($active ?? false)
                     <select name="supplier_id" class="form-select @error('supplier_id') is-invalid @enderror" required>
                         <option value="">— Выберите поставщика —</option>
                         @foreach($suppliers as $s)
-                            <option value="{{ $s->id }}" @selected(old('supplier_id') == $s->id)>{{ $s->name }}</option>
+                            <option value="{{ $s->id }}" @selected(old('supplier_id', $invoice->supplier_id) == $s->id)>{{ $s->name }}</option>
                         @endforeach
                     </select>
                     @error('supplier_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -3752,7 +3346,7 @@ $classes = ($active ?? false)
 
             <div class="mb-3">
                 <label class="form-label">Комментарий</label>
-                <textarea name="comment" class="form-control" rows="2">{{ old('comment') }}</textarea>
+                <textarea name="comment" class="form-control" rows="2">{{ old('comment', $invoice->comment) }}</textarea>
             </div>
 
             <h5>Позиции накладной</h5>
@@ -3760,27 +3354,28 @@ $classes = ($active ?? false)
             <div class="alert alert-danger">{{ $message }}</div>
             @enderror
 
-
-            <div class="row mb-2">
-                <div class="col-md-5">
-                    <select name="items[0][product_id]" class="form-select" required>
-                        <option value="">— Выберите товар —</option>
-                        @foreach($products as $p)
-                            <option value="{{ $p->id }}">{{ $p->sku }} — {{ $p->name }} ({{ $p->unit->abbreviation }})</option>
-                        @endforeach
-                    </select>
+            @foreach($invoice->items as $index => $item)
+                <div class="row mb-2">
+                    <div class="col-md-5">
+                        <select name="items[{{ $index }}][product_id]" class="form-select" required>
+                            <option value="">— Выберите товар —</option>
+                            @foreach($products as $p)
+                                <option value="{{ $p->id }}" @selected($item->product_id == $p->id)>{{ $p->sku }} — {{ $p->name }} ({{ $p->unit->abbreviation }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" name="items[{{ $index }}][quantity]" class="form-control" placeholder="Кол-во" min="0.01" step="0.01" value="{{ $item->quantity }}" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" name="items[{{ $index }}][unit_price]" class="form-control" placeholder="Цена" min="0" step="0.01" value="{{ $item->unit_price }}" required>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <input type="number" name="items[0][quantity]" class="form-control" placeholder="Кол-во" min="0.01" step="0.01" required>
-                </div>
-                <div class="col-md-2">
-                    <input type="number" name="items[0][unit_price]" class="form-control" placeholder="Цена" min="0" step="0.01" required>
-                </div>
-            </div>
+            @endforeach
 
             <div class="d-flex gap-2 mt-4">
-                <button type="submit" class="btn btn-primary">Сохранить черновик</button>
-                <a href="{{ route('incoming.invoices.index') }}" class="btn btn-outline-secondary">Отмена</a>
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                <a href="{{ route('incoming.invoices.show', $invoice) }}" class="btn btn-outline-secondary">Отмена</a>
             </div>
         </form>
     </div>
@@ -3861,137 +3456,6 @@ $classes = ($active ?? false)
 @endsection
 </file>
 
-<file path="resources/views/incoming/invoices/show.blade.php">
-@extends('layouts.app')
-
-@section('content')
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4>Приходная накладная №{{ $invoice->invoice_number }}</h4>
-            <div>
-                <a href="{{ route('incoming.invoices.index') }}" class="btn btn-outline-secondary">← К списку</a>
-            </div>
-        </div>
-
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
-
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <strong>Статус:</strong>
-                        @php
-                            $badge = match($invoice->status) {
-                                'draft' => 'bg-secondary',
-                                'posted' => 'bg-success',
-                                'cancelled' => 'bg-danger',
-                                default => 'bg-light text-dark'
-                            };
-                            $text = match($invoice->status) {
-                                'draft' => 'Черновик',
-                                'posted' => 'Проведена',
-                                'cancelled' => 'Отменена',
-                                default => $invoice->status
-                            };
-                        @endphp
-                        <span class="badge {{ $badge }}">{{ $text }}</span>
-                    </div>
-                    <div class="col-md-3">
-                        <strong>Дата:</strong> {{ $invoice->invoice_date->format('d.m.Y') }}
-                    </div>
-                    <div class="col-md-3">
-                        <strong>Поставщик:</strong> {{ $invoice->supplier->name }}
-                    </div>
-                    <div class="col-md-3">
-                        <strong>Создал:</strong> {{ $invoice->user->name }}
-                    </div>
-                </div>
-                @if($invoice->comment)
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <strong>Комментарий:</strong> {{ $invoice->comment }}
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </div>
-        <div class="mb-4">
-            @can('update', $invoice)
-                <a href="{{ route('incoming.invoices.edit', $invoice) }}" class="btn btn-warning">
-                    ✏️ Редактировать
-                </a>
-            @endcan
-
-            @if($invoice->isDraft())
-                @can('post', $invoice)
-                    <form action="{{ route('incoming.invoices.post', $invoice) }}" method="POST" class="d-inline">
-                        @csrf
-                        <button class="btn btn-success" onclick="return confirm('Провести накладную? Остатки будут изменены.')">
-                            ✅ Провести
-                        </button>
-                    </form>
-                @endcan
-            @endif
-
-            @if($invoice->isPosted())
-                @can('cancel', $invoice)
-                    <form action="{{ route('incoming.invoices.cancel', $invoice) }}" method="POST" class="d-inline">
-                        @csrf
-                        <button class="btn btn-danger" onclick="return confirm('Отменить накладную? Остатки будут уменьшены.')">
-                            ❌ Отменить
-                        </button>
-                    </form>
-                @endcan
-            @endif
-
-            @can('delete', $invoice)
-                <form action="{{ route('incoming.invoices.destroy', $invoice) }}" method="POST" class="d-inline">
-                    @csrf
-                    @method('DELETE')
-                    <button class="btn btn-outline-danger" onclick="return confirm('Удалить накладную?')">
-                        🗑️ Удалить
-                    </button>
-                </form>
-            @endcan
-        </div>
-        <h5>Позиции накладной</h5>
-        <div class="table-responsive mb-4">
-            <table class="table table-bordered">
-                <thead class="table-light">
-                <tr>
-                    <th>Товар</th>
-                    <th>Количество</th>
-                    <th>Цена за ед.</th>
-                    <th>Сумма</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach($invoice->items as $item)
-                    <tr>
-                        <td>{{ $item->product->name }} ({{ $item->product->unit->abbreviation }})</td>
-                        <td>{{ $item->quantity }}</td>
-                        <td>{{ number_format($item->unit_price, 2, ',', ' ') }} ₽</td>
-                        <td>{{ number_format($item->total, 2, ',', ' ') }} ₽</td>
-                    </tr>
-                @endforeach
-                </tbody>
-                <tfoot>
-                <tr>
-                    <th colspan="3" class="text-end">Итого:</th>
-                    <th>{{ number_format($invoice->total_amount, 2, ',', ' ') }} ₽</th>
-                </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-@endsection
-</file>
-
 <file path="resources/views/layouts/app.blade.php">
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -4062,114 +3526,6 @@ $classes = ($active ?? false)
         </div>
     </body>
 </html>
-</file>
-
-<file path="resources/views/layouts/navigation.blade.php">
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
-                </div>
-
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                </div>
-                @can('manage-inventory')
-                    <x-nav-link :href="route('incoming.invoices.index')" :active="request()->routeIs('incoming.invoices.*')">
-                        {{ __('Приходные накладные') }}
-                    </x-nav-link>
-                @endcan
-            </div>
-
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
-
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-        </div>
-
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-            </div>
-
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
-
-                <!-- Authentication -->
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
-                </form>
-            </div>
-        </div>
-    </div>
-</nav>
 </file>
 
 <file path="resources/views/profile/edit.blade.php">
@@ -4658,64 +4014,6 @@ $classes = ($active ?? false)
         @endif
     </body>
 </html>
-</file>
-
-<file path="routes/auth.php">
-<?php
-
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\ConfirmablePasswordController;
-use App\Http\Controllers\Auth\EmailVerificationNotificationController;
-use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\VerifyEmailController;
-use Illuminate\Support\Facades\Route;
-
-Route::middleware('guest')->group(function () {
-
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
-
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
-
-    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
-        ->name('password.request');
-
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
-        ->name('password.email');
-
-    Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
-        ->name('password.reset');
-
-    Route::post('reset-password', [NewPasswordController::class, 'store'])
-        ->name('password.store');
-});
-
-Route::middleware('auth')->group(function () {
-    Route::get('verify-email', EmailVerificationPromptController::class)
-        ->name('verification.notice');
-
-    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1'])
-        ->name('verification.verify');
-
-    Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-        ->middleware('throttle:6,1')
-        ->name('verification.send');
-
-    Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])
-        ->name('password.confirm');
-
-    Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
-
-    Route::put('password', [PasswordController::class, 'update'])->name('password.update');
-
-    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
-        ->name('logout');
-});
 </file>
 
 <file path="routes/console.php">
@@ -5338,6 +4636,288 @@ yarn-error.log
 /.zed
 </file>
 
+<file path="app/Http/Controllers/IncomingInvoiceController.php">
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\IncomingInvoice;
+use App\Models\Product;
+use App\Models\Supplier;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class IncomingInvoiceController extends Controller
+{
+    public function index()
+    {
+        $invoices = IncomingInvoice::with(['supplier', 'user'])
+            ->latest()
+            ->paginate(15);
+
+        return view('incoming.invoices.index', compact('invoices'));
+    }
+
+    public function create()
+    {
+        $suppliers = Supplier::orderBy('name')->get();
+        $products = Product::with('unit')->orderBy('name')->get();
+        $number = IncomingInvoice::generateNumber();
+
+        return view('incoming.invoices.create', compact('suppliers', 'products', 'number'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'invoice_date' => 'required|date',
+            'supplier_id' => 'required|exists:suppliers,id',
+            'comment' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.unit_price' => 'required|numeric|min:0',
+        ]);
+
+        $invoice = IncomingInvoice::create([
+            'invoice_number' => IncomingInvoice::generateNumber(),
+            'invoice_date' => $request->invoice_date,
+            'supplier_id' => $request->supplier_id,
+            'user_id' => auth()->id(),
+            'comment' => $request->comment,
+            'status' => 'draft',
+            'total_amount' => 0,
+        ]);
+
+        $total = 0;
+        foreach ($request->items as $item) {
+            $lineTotal = $item['quantity'] * $item['unit_price'];
+            $total += $lineTotal;
+            $invoice->items()->create([
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'unit_price' => $item['unit_price'],
+                'total' => $lineTotal,
+            ]);
+        }
+
+        $invoice->update(['total_amount' => $total]);
+
+        return redirect()->route('incoming.invoices.show', $invoice)
+            ->with('success', 'Приходная накладная создана. Статус: черновик.');
+    }
+
+    public function show(IncomingInvoice $invoice)
+    {
+        $invoice->load(['supplier', 'user', 'items.product.unit']);
+        return view('incoming.invoices.show', compact('invoice'));
+    }
+
+    public function edit(IncomingInvoice $invoice)
+    {
+        $this->authorize('update', $invoice);
+
+        $suppliers = Supplier::orderBy('name')->get();
+        $products = Product::with('unit')->orderBy('name')->get();
+        $invoice->load('items');
+
+        return view('incoming.invoices.edit', compact('invoice', 'suppliers', 'products'));
+    }
+
+    public function update(Request $request, IncomingInvoice $invoice)
+    {
+        $this->authorize('update', $invoice);
+
+        $request->validate([
+            'invoice_date' => 'required|date',
+            'supplier_id' => 'required|exists:suppliers,id',
+            'comment' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.unit_price' => 'required|numeric|min:0',
+        ]);
+
+        $invoice->update([
+            'invoice_date' => $request->invoice_date,
+            'supplier_id' => $request->supplier_id,
+            'comment' => $request->comment,
+        ]);
+
+        $invoice->items()->delete();
+
+        $total = 0;
+        foreach ($request->items as $item) {
+            $lineTotal = $item['quantity'] * $item['unit_price'];
+            $total += $lineTotal;
+            $invoice->items()->create([
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'unit_price' => $item['unit_price'],
+                'total' => $lineTotal,
+            ]);
+        }
+
+        $invoice->update(['total_amount' => $total]);
+
+        return redirect()->route('incoming.invoices.show', $invoice)
+            ->with('success', 'Накладная обновлена.');
+    }
+
+    public function destroy(IncomingInvoice $invoice)
+    {
+        $this->authorize('delete', $invoice);
+        $invoice->delete();
+        return redirect()->route('incoming.invoices.index')
+            ->with('success', 'Накладная удалена.');
+    }
+
+    public function post(IncomingInvoice $invoice)
+    {
+        $this->authorize('post', $invoice);
+
+        if (!$invoice->isDraft()) {
+            return redirect()->back()
+                ->with('error', 'Провести можно только накладную в статусе "Черновик".');
+        }
+
+        $invoice->load('items.product');
+
+        DB::transaction(function () use ($invoice) {
+            foreach ($invoice->items as $item) {
+                $item->product->increment('stock_quantity', $item->quantity);
+            }
+            $invoice->update(['status' => 'posted']);
+        });
+
+        return redirect()->route('incoming.invoices.show', $invoice)
+            ->with('success', 'Накладная проведена. Остатки товаров увеличены.');
+    }
+
+    public function cancel(IncomingInvoice $invoice)
+    {
+        $this->authorize('cancel', $invoice);
+
+        if (!$invoice->isPosted()) {
+            return redirect()->back()
+                ->with('error', 'Отменить можно только проведённую накладную.');
+        }
+
+        $invoice->load('items.product');
+
+        DB::transaction(function () use ($invoice) {
+            foreach ($invoice->items as $item) {
+                $item->product->decrement('stock_quantity', $item->quantity);
+            }
+            $invoice->update(['status' => 'cancelled']);
+        });
+
+        return redirect()->route('incoming.invoices.show', $invoice)
+            ->with('success', 'Накладная отменена. Остатки товаров скорректированы.');
+    }
+}
+</file>
+
+<file path="app/Models/User.php">
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+#[Fillable(['name', 'email', 'password', 'role'])]
+#[Hidden(['password', 'remember_token'])]
+class User extends Authenticatable
+{
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, Notifiable;
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isStorekeeper(): bool
+    {
+        return $this->role === 'storekeeper';
+    }
+
+    public function isManager(): bool
+    {
+        return $this->role === 'manager';
+    }
+}
+</file>
+
+<file path="database/seeders/DatabaseSeeder.php">
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
+    {
+        $this->call([
+            UserSeeder::class,
+        ]);
+    }
+}
+</file>
+
+<file path="package.json">
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@tailwindcss/forms": "^0.5.2",
+        "@tailwindcss/vite": "^4.0.0",
+        "@vitejs/plugin-vue": "^6.0.5",
+        "alpinejs": "^3.4.2",
+        "autoprefixer": "^10.4.2",
+        "axios": "^1.7.4",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^1.2.0",
+        "postcss": "^8.4.31",
+        "tailwindcss": "^3.1.0",
+        "vite": "^6.0.11"
+    },
+    "dependencies": {
+        "@popperjs/core": "^2.11.8",
+        "bootstrap": "^5.3.8",
+        "bootstrap-icons": "^1.13.1"
+    }
+}
+</file>
+
 <file path="README.md">
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
@@ -5407,6 +4987,389 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 </file>
 
+<file path="resources/css/app.css">
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+</file>
+
+<file path="resources/js/app.js">
+import './bootstrap';
+import 'bootstrap/dist/js/bootstrap.bundle';
+
+import Alpine from 'alpinejs';
+
+window.Alpine = Alpine;
+
+Alpine.start();
+</file>
+
+<file path="resources/views/incoming/invoices/create.blade.php">
+@extends('layouts.app')
+
+@section('content')
+    <div class="container">
+        <h4 class="mb-4">Новая приходная накладная</h4>
+
+        <form action="{{ route('incoming.invoices.store') }}" method="POST">
+            @csrf
+
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">Номер накладной</label>
+                    <input type="text" class="form-control" value="{{ $number }}" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Дата <span class="text-danger">*</span></label>
+                    <input type="date" name="invoice_date" class="form-control @error('invoice_date') is-invalid @enderror"
+                           value="{{ old('invoice_date', date('Y-m-d')) }}" required>
+                    @error('invoice_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Поставщик <span class="text-danger">*</span></label>
+                    <select name="supplier_id" class="form-select @error('supplier_id') is-invalid @enderror" required>
+                        <option value="">— Выберите поставщика —</option>
+                        @foreach($suppliers as $s)
+                            <option value="{{ $s->id }}" @selected(old('supplier_id') == $s->id)>{{ $s->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('supplier_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Комментарий</label>
+                <textarea name="comment" class="form-control" rows="2">{{ old('comment') }}</textarea>
+            </div>
+
+            <h5>Позиции накладной</h5>
+            @error('items')
+            <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
+
+
+            <div class="row mb-2">
+                <div class="col-md-5">
+                    <select name="items[0][product_id]" class="form-select" required>
+                        <option value="">— Выберите товар —</option>
+                        @foreach($products as $p)
+                            <option value="{{ $p->id }}">{{ $p->sku }} — {{ $p->name }} ({{ $p->unit->abbreviation }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="items[0][quantity]" class="form-control" placeholder="Кол-во" min="0.01" step="0.01" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="items[0][unit_price]" class="form-control" placeholder="Цена" min="0" step="0.01" required>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Сохранить черновик</button>
+                <a href="{{ route('incoming.invoices.index') }}" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+@endsection
+</file>
+
+<file path="resources/views/incoming/invoices/show.blade.php">
+@extends('layouts.app')
+
+@section('content')
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4>Приходная накладная №{{ $invoice->invoice_number }}</h4>
+            <div>
+                <a href="{{ route('incoming.invoices.index') }}" class="btn btn-outline-secondary">← К списку</a>
+            </div>
+        </div>
+
+        @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Статус:</strong>
+                        @php
+                            $badge = match($invoice->status) {
+                                'draft' => 'bg-secondary',
+                                'posted' => 'bg-success',
+                                'cancelled' => 'bg-danger',
+                                default => 'bg-light text-dark'
+                            };
+                            $text = match($invoice->status) {
+                                'draft' => 'Черновик',
+                                'posted' => 'Проведена',
+                                'cancelled' => 'Отменена',
+                                default => $invoice->status
+                            };
+                        @endphp
+                        <span class="badge {{ $badge }}">{{ $text }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Дата:</strong> {{ $invoice->invoice_date->format('d.m.Y') }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Поставщик:</strong> {{ $invoice->supplier->name }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Создал:</strong> {{ $invoice->user->name }}
+                    </div>
+                </div>
+                @if($invoice->comment)
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <strong>Комментарий:</strong> {{ $invoice->comment }}
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+        <div class="mb-4">
+            @can('update', $invoice)
+                <a href="{{ route('incoming.invoices.edit', $invoice) }}" class="btn btn-warning">
+                    ✏️ Редактировать
+                </a>
+            @endcan
+
+            @if($invoice->isDraft())
+                @can('post', $invoice)
+                    <form action="{{ route('incoming.invoices.post', $invoice) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button class="btn btn-success" onclick="return confirm('Провести накладную? Остатки будут изменены.')">
+                            ✅ Провести
+                        </button>
+                    </form>
+                @endcan
+            @endif
+
+            @if($invoice->isPosted())
+                @can('cancel', $invoice)
+                    <form action="{{ route('incoming.invoices.cancel', $invoice) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button class="btn btn-danger" onclick="return confirm('Отменить накладную? Остатки будут уменьшены.')">
+                            ❌ Отменить
+                        </button>
+                    </form>
+                @endcan
+            @endif
+
+            @can('delete', $invoice)
+                <form action="{{ route('incoming.invoices.destroy', $invoice) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button class="btn btn-outline-danger" onclick="return confirm('Удалить накладную?')">
+                        🗑️ Удалить
+                    </button>
+                </form>
+            @endcan
+        </div>
+        <h5>Позиции накладной</h5>
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                <tr>
+                    <th>Товар</th>
+                    <th>Количество</th>
+                    <th>Цена за ед.</th>
+                    <th>Сумма</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach($invoice->items as $item)
+                    <tr>
+                        <td>{{ $item->product->name }} ({{ $item->product->unit->abbreviation }})</td>
+                        <td>{{ $item->quantity }}</td>
+                        <td>{{ number_format($item->unit_price, 2, ',', ' ') }} ₽</td>
+                        <td>{{ number_format($item->total, 2, ',', ' ') }} ₽</td>
+                    </tr>
+                @endforeach
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">Итого:</th>
+                    <th>{{ number_format($invoice->total_amount, 2, ',', ' ') }} ₽</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+@endsection
+</file>
+
+<file path="resources/views/layouts/navigation.blade.php">
+<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+    <!-- Primary Navigation Menu -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex">
+                <!-- Logo -->
+                <div class="shrink-0 flex items-center">
+                    <a href="{{ route('dashboard') }}">
+                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                    </a>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                        {{ __('Dashboard') }}
+                    </x-nav-link>
+                </div>
+                @can('manage-inventory')
+                    <x-nav-link :href="route('incoming.invoices.index')" :active="request()->routeIs('incoming.invoices.*')">
+                        {{ __('Приходные накладные') }}
+                    </x-nav-link>
+                @endcan
+            </div>
+
+            <!-- Settings Dropdown -->
+            <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <x-dropdown align="right" width="48">
+                    <x-slot name="trigger">
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                            <div>{{ Auth::user()->name }}</div>
+
+                            <div class="ms-1">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </button>
+                    </x-slot>
+
+                    <x-slot name="content">
+                        <x-dropdown-link :href="route('profile.edit')">
+                            {{ __('Profile') }}
+                        </x-dropdown-link>
+
+                        <!-- Authentication -->
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+
+                            <x-dropdown-link :href="route('logout')"
+                                    onclick="event.preventDefault();
+                                                this.closest('form').submit();">
+                                {{ __('Log Out') }}
+                            </x-dropdown-link>
+                        </form>
+                    </x-slot>
+                </x-dropdown>
+            </div>
+
+            <!-- Hamburger -->
+            <div class="-me-2 flex items-center sm:hidden">
+                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Responsive Navigation Menu -->
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+        </div>
+
+        <!-- Responsive Settings Options -->
+        <div class="pt-4 pb-1 border-t border-gray-200">
+            <div class="px-4">
+                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
+                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+            </div>
+
+            <div class="mt-3 space-y-1">
+                <x-responsive-nav-link :href="route('profile.edit')">
+                    {{ __('Profile') }}
+                </x-responsive-nav-link>
+
+                <!-- Authentication -->
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+
+                    <x-responsive-nav-link :href="route('logout')"
+                            onclick="event.preventDefault();
+                                        this.closest('form').submit();">
+                        {{ __('Log Out') }}
+                    </x-responsive-nav-link>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+</file>
+
+<file path="routes/auth.php">
+<?php
+
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\ConfirmablePasswordController;
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\VerifyEmailController;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware('guest')->group(function () {
+
+    Route::get('login', [AuthenticatedSessionController::class, 'create'])
+        ->name('login');
+
+    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+
+    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
+        ->name('password.request');
+
+    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->name('password.email');
+
+    Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
+        ->name('password.reset');
+
+    Route::post('reset-password', [NewPasswordController::class, 'store'])
+        ->name('password.store');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('verify-email', EmailVerificationPromptController::class)
+        ->name('verification.notice');
+
+    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+
+    Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+
+    Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])
+        ->name('password.confirm');
+
+    Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
+
+    Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+
+    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
+        ->name('logout');
+});
+</file>
+
 <file path="routes/web.php">
 <?php
 
@@ -5440,6 +5403,48 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+</file>
+
+<file path="app/Providers/AppServiceProvider.php">
+<?php
+
+namespace App\Providers;
+
+use App\Models\User;
+use App\Models\IncomingInvoice;
+use App\Policies\IncomingInvoicePolicy;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        //
+    }
+
+    /**
+     * Bootstrap any application services.
+     *
+     * @noinspection PhpParamsInspection
+     */
+    public function boot(): void
+    {
+        Gate::define('manage-inventory', function (User $user) {
+            return in_array($user->role, ['admin', 'storekeeper']);
+        });
+
+        Gate::define('view-reports', function (User $user) {
+            return in_array($user->role, ['admin', 'manager', 'storekeeper']);
+        });
+
+        Gate::define('access-admin-panel', function (User $user) {
+            return $user->role === 'admin';
+        });
+
+        Gate::policy(IncomingInvoice::class, IncomingInvoicePolicy::class);
+    }
+}
 </file>
 
 </files>
