@@ -9,6 +9,8 @@ use App\Policies\ProductPolicy;
 use App\Policies\IncomingInvoicePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use App\Models\OutgoingInvoice;
+use App\Policies\OutgoingInvoicePolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -39,5 +41,6 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(Product::class, ProductPolicy::class);
         Gate::policy(IncomingInvoice::class, IncomingInvoicePolicy::class);
+        Gate::policy(OutgoingInvoice::class, OutgoingInvoicePolicy::class);
     }
 }
