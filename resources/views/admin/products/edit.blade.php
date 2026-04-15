@@ -76,16 +76,9 @@
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="stock_quantity" class="form-label">Текущий остаток *</label>
-                        <input type="number" class="form-control @error('stock_quantity') is-invalid @enderror" id="stock_quantity" name="stock_quantity" value="{{ old('stock_quantity', $product->stock_quantity) }}" min="0" required>
-                        @error('stock_quantity')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="col-md-6 mb-3">
                         <label for="min_stock" class="form-label">Минимальный остаток</label>
                         <input type="number" class="form-control @error('min_stock') is-invalid @enderror" id="min_stock" name="min_stock" value="{{ old('min_stock', $product->min_stock) }}" min="0">
+                        <small class="text-muted">Для предупреждения о низком остатке</small>
                         @error('min_stock')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

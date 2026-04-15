@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@php use Illuminate\Support\Str; @endphp
 
 @section('title', 'Товары')
 

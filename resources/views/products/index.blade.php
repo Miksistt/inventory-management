@@ -1,8 +1,10 @@
 @extends('layouts.app')
+@php use Illuminate\Support\Str; @endphp
 
 @section('content')
     <div class="container">
         <h1 class="mb-4">Каталог товаров</h1>
+        ...
 
         <div class="card mb-4">
             <div class="card-body">

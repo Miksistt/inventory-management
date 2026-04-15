@@ -32,7 +32,6 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'unit_id' => 'required|exists:units,id',
             'min_stock' => 'nullable|integer|min:0',
-            'stock_quantity' => 'required|integer|min:0',
         ]);
 
         Product::create($validated);
@@ -62,7 +61,6 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'unit_id' => 'required|exists:units,id',
             'min_stock' => 'nullable|integer|min:0',
-            'stock_quantity' => 'required|integer|min:0',
         ]);
 
         $product->update($validated);
@@ -72,8 +70,14 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
-        $product->delete();
+        try {
+            $product->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->back()
+                ->with('error', 'Нельзя удалить товар: он используется в накладных.');
+        }
 
-        return redirect()->route('admin.products.index')->with('success', 'Товар удалён');
+        return redirect()->route('admin.products.index')
+            ->with('success', 'Товар удалён');
     }
 }
