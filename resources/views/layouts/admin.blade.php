@@ -38,18 +38,18 @@
                         <i class="bi bi-truck"></i> Поставщики
                     </a>
                 </li>
-                {{--
+
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.products.index') }}">
+                    <a class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">
                         <i class="bi bi-box"></i> Товары
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.users.index') }}">
+                    <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
                         <i class="bi bi-people"></i> Пользователи
                     </a>
                 </li>
-                --}}
+
             </ul>
             <ul class="navbar-nav">
                 <li class="nav-item">
