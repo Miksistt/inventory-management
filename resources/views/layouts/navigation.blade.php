@@ -1,4 +1,4 @@
-[15.04.2026 21:08] NoName: <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -12,24 +12,24 @@
 
                 @can('access-admin-panel')
                     <x-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.*')">
-                        {{ ('Админ-панель') }}
+                        {{ __('Админ-панель') }}
                     </x-nav-link>
                 @endcan
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ ('Главная') }}
+                        {{ __('Главная') }}
                     </x-nav-link>
                     <x-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
-                        {{ ('Каталог') }}
+                        {{ __('Каталог') }}
                     </x-nav-link>
                     <x-nav-link :href="route('stock.index')" :active="request()->routeIs('stock.*')">
-                        {{ ('Остатки') }}
+                        {{ __('Остатки') }}
                     </x-nav-link>
                     @can('manage-inventory')
                         <x-nav-link :href="route('outgoing.invoices.index')" :active="request()->routeIs('outgoing.*')">
-                            {{ ('Расходные') }}
+                            {{ __('Расходные') }}
                         </x-nav-link>
                     @endcan
                 </div>
@@ -51,15 +51,16 @@
 
                     <x-slot name="content">
                         <x-dropdown-link :href="route('profile.edit')">
-                            {{ ('Profile') }}
+                            {{ __('Profile') }}
                         </x-dropdown-link>
-                        [15.04.2026 21:08] NoName: <!-- Authentication -->
+
+                        <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
                                              onclick="event.preventDefault();
                                                 this.closest('form').submit();">
-                                {{ ('Log Out') }}
+                                {{ __('Log Out') }}
                             </x-dropdown-link>
                         </form>
                     </x-slot>
@@ -82,11 +83,11 @@
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ ('Dashboard') }}
+                {{ __('Dashboard') }}
             </x-responsive-nav-link>
             @can('manage-inventory')
                 <x-responsive-nav-link :href="route('outgoing.invoices.index')" :active="request()->routeIs('outgoing.*')">
-                    {{ ('Расходные') }}
+                    {{ __('Расходные') }}
                 </x-responsive-nav-link>
             @endcan
         </div>
@@ -100,7 +101,7 @@
 
             <div class="mt-3 space-y-1">
                 <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ ('Profile') }}
+                    {{ __('Profile') }}
                 </x-responsive-nav-link>
 
                 <!-- Authentication -->
