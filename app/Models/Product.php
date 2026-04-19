@@ -61,4 +61,29 @@ class Product extends Model
         }
         return 'В норме';
     }
+
+    public function hasEnoughStock(float $quantity): bool
+    {
+        return $this->stock_quantity >= $quantity;
+    }
+
+    public function canDecreaseStock(float $quantity): bool
+    {
+        return $this->hasEnoughStock($quantity);
+    }
+
+    public function safeIncrement(float $quantity): void
+    {
+        $this->increment('stock_quantity', $quantity);
+    }
+
+    public function safeDecrement(float $quantity): bool
+    {
+        if (!$this->canDecreaseStock($quantity)) {
+            return false;
+        }
+
+        $this->decrement('stock_quantity', $quantity);
+        return true;
+    }
 }
