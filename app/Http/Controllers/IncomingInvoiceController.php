@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\InvoicePostingService;
 
 class IncomingInvoiceController extends Controller
 {
@@ -133,55 +134,37 @@ class IncomingInvoiceController extends Controller
             ->with('success', 'Накладная удалена.');
     }
 
-    public function post(IncomingInvoice $invoice)
+    public function post(IncomingInvoice $invoice, InvoicePostingService $postingService)
     {
         $this->authorize('post', $invoice);
 
-        if (!$invoice->isDraft()) {
+        if (!$postingService->canPost($invoice)) {
             return redirect()->back()
-                ->with('error', 'Провести можно только накладную в статусе "Черновик".');
+                ->with('error', 'Провести можно только накладную в статусе "Черновик" с позициями.');
         }
 
-        $invoice->load('items.product');
-
         try {
-            DB::transaction(function () use ($invoice) {
-                foreach ($invoice->items as $item) {
-                    $item->product->increment('stock_quantity', $item->quantity);
-                }
-                $invoice->update(['status' => 'posted']);
-            });
+            $postingService->post($invoice);
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Ошибка при проведении накладной. Попробуйте позже.');
+                ->with('error', 'Ошибка при проведении накладной: ' . $e->getMessage());
         }
 
         return redirect()->route('incoming.invoices.show', $invoice)
             ->with('success', 'Накладная проведена. Остатки товаров увеличены.');
     }
 
-    public function cancel(IncomingInvoice $invoice)
+    public function cancel(IncomingInvoice $invoice, InvoicePostingService $postingService)
     {
         $this->authorize('cancel', $invoice);
 
-        if (!$invoice->isPosted()) {
+        if (!$postingService->canCancel($invoice)) {
             return redirect()->back()
-                ->with('error', 'Отменить можно только проведённую накладную.');
+                ->with('error', 'Невозможно отменить накладную. Проверьте статус и остатки товаров.');
         }
 
-        $invoice->load('items.product');
-
         try {
-            DB::transaction(function () use ($invoice) {
-                foreach ($invoice->items as $item) {
-                    // Проверяем, что остаток не станет отрицательным
-                    if ($item->product->stock_quantity < $item->quantity) {
-                        throw new \Exception("Недостаточно остатка для товара {$item->product->name}");
-                    }
-                    $item->product->decrement('stock_quantity', $item->quantity);
-                }
-                $invoice->update(['status' => 'cancelled']);
-            });
+            $postingService->cancel($invoice);
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Ошибка при отмене накладной: ' . $e->getMessage());
