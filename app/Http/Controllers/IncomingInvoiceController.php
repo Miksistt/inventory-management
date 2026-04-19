@@ -144,12 +144,17 @@ class IncomingInvoiceController extends Controller
 
         $invoice->load('items.product');
 
-        DB::transaction(function () use ($invoice) {
-            foreach ($invoice->items as $item) {
-                $item->product->increment('stock_quantity', $item->quantity);
-            }
-            $invoice->update(['status' => 'posted']);
-        });
+        try {
+            DB::transaction(function () use ($invoice) {
+                foreach ($invoice->items as $item) {
+                    $item->product->increment('stock_quantity', $item->quantity);
+                }
+                $invoice->update(['status' => 'posted']);
+            });
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Ошибка при проведении накладной. Попробуйте позже.');
+        }
 
         return redirect()->route('incoming.invoices.show', $invoice)
             ->with('success', 'Накладная проведена. Остатки товаров увеличены.');
@@ -166,12 +171,21 @@ class IncomingInvoiceController extends Controller
 
         $invoice->load('items.product');
 
-        DB::transaction(function () use ($invoice) {
-            foreach ($invoice->items as $item) {
-                $item->product->decrement('stock_quantity', $item->quantity);
-            }
-            $invoice->update(['status' => 'cancelled']);
-        });
+        try {
+            DB::transaction(function () use ($invoice) {
+                foreach ($invoice->items as $item) {
+                    // Проверяем, что остаток не станет отрицательным
+                    if ($item->product->stock_quantity < $item->quantity) {
+                        throw new \Exception("Недостаточно остатка для товара {$item->product->name}");
+                    }
+                    $item->product->decrement('stock_quantity', $item->quantity);
+                }
+                $invoice->update(['status' => 'cancelled']);
+            });
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Ошибка при отмене накладной: ' . $e->getMessage());
+        }
 
         return redirect()->route('incoming.invoices.show', $invoice)
             ->with('success', 'Накладная отменена. Остатки товаров скорректированы.');
