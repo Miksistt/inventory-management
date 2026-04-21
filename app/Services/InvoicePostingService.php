@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\DB;
 
 class InvoicePostingService
 {
-
     public function post(IncomingInvoice $invoice): bool
     {
         if (!$invoice->isDraft()) {
@@ -30,11 +29,18 @@ class InvoicePostingService
             return false;
         }
 
+        foreach ($invoice->items as $item) {
+            if ($item->product->stock_quantity < $item->quantity) {
+                throw new \Exception(
+                    "Недостаточно остатка для товара «{$item->product->name}»: " .
+                    "на складе {$item->product->stock_quantity} {$item->product->unit->abbreviation}, " .
+                    "требуется {$item->quantity}."
+                );
+            }
+        }
+
         DB::transaction(function () use ($invoice) {
             foreach ($invoice->items as $item) {
-                if ($item->product->stock_quantity < $item->quantity) {
-                    throw new \Exception("Недостаточно остатка для товара {$item->product->name}");
-                }
                 $item->product->decrement('stock_quantity', $item->quantity);
             }
             $invoice->update(['status' => 'cancelled']);
@@ -45,15 +51,7 @@ class InvoicePostingService
 
     public function canPost(IncomingInvoice $invoice): bool
     {
-        if (!$invoice->isDraft()) {
-            return false;
-        }
-
-        if ($invoice->items->isEmpty()) {
-            return false;
-        }
-
-        return true;
+        return $invoice->isDraft() && $invoice->items->isNotEmpty();
     }
 
     public function canCancel(IncomingInvoice $invoice): bool
@@ -62,7 +60,6 @@ class InvoicePostingService
             return false;
         }
 
-        // Проверяем, что для всех товаров хватает остатка
         foreach ($invoice->items as $item) {
             if ($item->product->stock_quantity < $item->quantity) {
                 return false;
