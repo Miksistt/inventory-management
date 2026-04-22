@@ -4,7 +4,7 @@
     <div class="container">
         <h4 class="mb-4">Редактирование накладной №{{ $invoice->invoice_number }}</h4>
 
-        <form action="{{ route('incoming.invoices.update', $invoice) }}" method="POST">
+        <form action="{{ route('incoming.invoices.update', $invoice) }}" method="POST" id="invoiceForm">
             @csrf
             @method('PUT')
 
@@ -41,29 +41,105 @@
             <div class="alert alert-danger">{{ $message }}</div>
             @enderror
 
-            @foreach($invoice->items as $index => $item)
-                <div class="row mb-2">
-                    <div class="col-md-5">
-                        <select name="items[{{ $index }}][product_id]" class="form-select" required>
-                            <option value="">— Выберите товар —</option>
-                            @foreach($products as $p)
-                                <option value="{{ $p->id }}" @selected($item->product_id == $p->id)>{{ $p->sku }} — {{ $p->name }} ({{ $p->unit->abbreviation }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" name="items[{{ $index }}][quantity]" class="form-control" placeholder="Кол-во" min="0.01" step="0.01" value="{{ $item->quantity }}" required>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" name="items[{{ $index }}][unit_price]" class="form-control" placeholder="Цена" min="0" step="0.01" value="{{ $item->unit_price }}" required>
-                    </div>
-                </div>
-            @endforeach
+            <div id="items-container"></div>
 
-            <div class="d-flex gap-2 mt-4">
+            <button type="button" class="btn btn-outline-secondary mb-3" id="add-item">
+                + Добавить позицию
+            </button>
+
+            <div class="text-end fs-5 mb-3">
+                Итого: <strong><span id="total-sum">0.00</span> ₽</strong>
+            </div>
+
+            <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Сохранить изменения</button>
                 <a href="{{ route('incoming.invoices.show', $invoice) }}" class="btn btn-outline-secondary">Отмена</a>
             </div>
         </form>
     </div>
+
+    <script>
+        const products = @json($products);
+        const existingItems = @json($invoice->items);
+        let itemIndex = 0;
+
+        document.getElementById('add-item').addEventListener('click', addRow);
+
+        function addRow(data = null) {
+            const container = document.getElementById('items-container');
+            const row = document.createElement('div');
+            row.className = 'row mb-2 align-items-center item-row';
+
+            const productId = data?.product_id || '';
+            const quantity = data?.quantity || '';
+            const unitPrice = data?.unit_price || '';
+
+            row.innerHTML = `
+        <div class="col-md-5">
+            <select name="items[${itemIndex}][product_id]" class="form-select product-select" required>
+                <option value="">— Выберите товар —</option>
+                ${products.map(p =>
+                `<option value="${p.id}" ${p.id == productId ? 'selected' : ''}>${p.sku} — ${p.name} (${p.unit?.abbreviation || ''})</option>`
+            ).join('')}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="items[${itemIndex}][quantity]"
+                   class="form-control qty" placeholder="Кол-во" min="0.01" step="0.01" value="${quantity}" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="items[${itemIndex}][unit_price]"
+                   class="form-control price" placeholder="Цена ₽" min="0" step="0.01" value="${unitPrice}" required>
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control line-total bg-light" placeholder="Сумма" readonly>
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-danger btn-sm remove-item">✕</button>
+        </div>`;
+            container.appendChild(row);
+            bindRowEvents(row);
+
+            if (quantity && unitPrice) {
+                const qty = row.querySelector('.qty');
+                const price = row.querySelector('.price');
+                const total = row.querySelector('.line-total');
+                total.value = (parseFloat(quantity) * parseFloat(unitPrice)).toFixed(2);
+            }
+
+            itemIndex++;
+            updateGrandTotal();
+        }
+
+        function bindRowEvents(row) {
+            const qty = row.querySelector('.qty');
+            const price = row.querySelector('.price');
+            const total = row.querySelector('.line-total');
+
+            const calc = () => {
+                const t = (parseFloat(qty.value) || 0) * (parseFloat(price.value) || 0);
+                total.value = t.toFixed(2);
+                updateGrandTotal();
+            };
+
+            qty.addEventListener('input', calc);
+            price.addEventListener('input', calc);
+            row.querySelector('.remove-item').addEventListener('click', () => {
+                row.remove();
+                updateGrandTotal();
+            });
+        }
+
+        function updateGrandTotal() {
+            let sum = 0;
+            document.querySelectorAll('.line-total').forEach(el => sum += parseFloat(el.value) || 0);
+            document.getElementById('total-sum').textContent = sum.toFixed(2);
+        }
+
+        existingItems.forEach(item => addRow(item));
+
+        if (existingItems.length === 0) {
+            addRow();
+        }
+    </script>
 @endsection
