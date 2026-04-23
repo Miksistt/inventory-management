@@ -4,17 +4,16 @@
     <div class="container">
         <h3 class="mb-4">Панель управления</h3>
 
-
         <div class="row mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card text-white bg-primary">
                     <div class="card-body">
-                        <h5 class="card-title">Товаров в системе</h5>
+                        <h5 class="card-title">Товаров</h5>
                         <p class="card-text fs-2 fw-bold">{{ $stats['products_count'] }}</p>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card text-white bg-danger">
                     <div class="card-body">
                         <h5 class="card-title">Критический остаток</h5>
@@ -22,7 +21,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card text-white bg-success">
                     <div class="card-body">
                         <h5 class="card-title">Приходов сегодня</h5>
@@ -30,8 +29,15 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h5 class="card-title">Расходов сегодня</h5>
+                        <p class="card-text fs-2 fw-bold">{{ $stats['outgoing_today'] }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
-
 
         @can('manage-inventory')
             <div class="mb-4">
@@ -45,7 +51,6 @@
                 @endif
             </div>
         @endcan
-
 
         <div class="row">
             <div class="col-md-6">
@@ -68,23 +73,7 @@
                                     </a>
                                 </td>
                                 <td>{{ $inv->supplier->name ?? '—' }}</td>
-                                <td>
-                                    @php
-                                        $badge = match($inv->status) {
-                                            'draft' => 'bg-secondary',
-                                            'posted' => 'bg-success',
-                                            'cancelled' => 'bg-danger',
-                                            default => 'bg-light text-dark'
-                                        };
-                                        $text = match($inv->status) {
-                                            'draft' => 'Черновик',
-                                            'posted' => 'Проведена',
-                                            'cancelled' => 'Отменена',
-                                            default => $inv->status
-                                        };
-                                    @endphp
-                                    <span class="badge {{ $badge }}">{{ $text }}</span>
-                                </td>
+                                <td><x-invoice-status :status="$inv->status" /></td>
                             </tr>
                         @empty
                             <tr>
@@ -99,6 +88,42 @@
             </div>
 
             <div class="col-md-6">
+                <h5>Последние расходные накладные</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Номер</th>
+                            <th>Получатель</th>
+                            <th>Статус</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @forelse($recentOutgoing as $inv)
+                            <tr>
+                                <td>
+                                    <a href="{{ route('outgoing.invoices.show', $inv) }}">
+                                        {{ $inv->invoice_number }}
+                                    </a>
+                                </td>
+                                <td>{{ $inv->recipient }}</td>
+                                <td><x-invoice-status :status="$inv->status" /></td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-3">
+                                    Нет расходных накладных
+                                </td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
                 <h5>Товары с критическим остатком</h5>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover">
