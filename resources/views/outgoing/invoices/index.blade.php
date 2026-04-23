@@ -44,21 +44,7 @@
                         <td>{{ $invoice->recipient }}</td>
                         <td>{{ $invoice->user->name }}</td>
                         <td>
-                            @php
-                                $badge = match($invoice->status) {
-                                    'draft'     => 'bg-secondary',
-                                    'posted'    => 'bg-success',
-                                    'cancelled' => 'bg-danger',
-                                    default     => 'bg-light text-dark',
-                                };
-                                $text = match($invoice->status) {
-                                    'draft'     => 'Черновик',
-                                    'posted'    => 'Проведена',
-                                    'cancelled' => 'Отменена',
-                                    default     => $invoice->status,
-                                };
-                            @endphp
-                            <span class="badge {{ $badge }}">{{ $text }}</span>
+                            <x-invoice-status :status="$invoice->status" />
                         </td>
                         <td>
                             <a href="{{ route('outgoing.invoices.show', $invoice) }}"
