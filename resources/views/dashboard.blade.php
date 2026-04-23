@@ -5,15 +5,15 @@
         <h3 class="mb-4">Панель управления</h3>
 
         <div class="row mb-4">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card text-white bg-primary">
                     <div class="card-body">
-                        <h5 class="card-title">Товаров</h5>
+                        <h5 class="card-title">Товаров в системе</h5>
                         <p class="card-text fs-2 fw-bold">{{ $stats['products_count'] }}</p>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card text-white bg-danger">
                     <div class="card-body">
                         <h5 class="card-title">Критический остаток</h5>
@@ -21,19 +21,11 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card text-white bg-success">
                     <div class="card-body">
                         <h5 class="card-title">Приходов сегодня</h5>
                         <p class="card-text fs-2 fw-bold">{{ $stats['invoices_today'] }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-warning">
-                    <div class="card-body">
-                        <h5 class="card-title">Расходов сегодня</h5>
-                        <p class="card-text fs-2 fw-bold">{{ $stats['outgoing_today'] }}</p>
                     </div>
                 </div>
             </div>
@@ -44,11 +36,6 @@
                 <a href="{{ route('incoming.invoices.create') }}" class="btn btn-success me-2">
                     + Приходная накладная
                 </a>
-                @if(Route::has('outgoing.invoices.create'))
-                    <a href="{{ route('outgoing.invoices.create') }}" class="btn btn-warning">
-                        + Расходная накладная
-                    </a>
-                @endif
             </div>
         @endcan
 
@@ -88,42 +75,6 @@
             </div>
 
             <div class="col-md-6">
-                <h5>Последние расходные накладные</h5>
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover">
-                        <thead class="table-light">
-                        <tr>
-                            <th>Номер</th>
-                            <th>Получатель</th>
-                            <th>Статус</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @forelse($recentOutgoing as $inv)
-                            <tr>
-                                <td>
-                                    <a href="{{ route('outgoing.invoices.show', $inv) }}">
-                                        {{ $inv->invoice_number }}
-                                    </a>
-                                </td>
-                                <td>{{ $inv->recipient }}</td>
-                                <td><x-invoice-status :status="$inv->status" /></td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="text-center text-muted py-3">
-                                    Нет расходных накладных
-                                </td>
-                            </tr>
-                        @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mt-4">
-            <div class="col-12">
                 <h5>Товары с критическим остатком</h5>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover">
