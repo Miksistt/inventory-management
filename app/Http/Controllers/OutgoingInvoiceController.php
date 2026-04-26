@@ -11,19 +11,15 @@ class OutgoingInvoiceController extends Controller
 {
     public function index()
     {
-        $invoices = OutgoingInvoice::with(['user'])
-            ->latest()
-            ->paginate(15);
+        $invoices = OutgoingInvoice::with(['user'])->latest()->paginate(15);
 
         return view('outgoing.invoices.index', compact('invoices'));
     }
 
     public function create()
     {
-        $products = Product::with('unit')
-            ->where('stock_quantity', '>', 0)
-            ->orderBy('name')
-            ->get();
+        $products = Product::with('unit')->where('stock_quantity', '>', 0)
+            ->orderBy('name')->get();
 
         $number = OutgoingInvoice::generateNumber();
 
@@ -33,27 +29,27 @@ class OutgoingInvoiceController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'invoice_date'       => 'required|date',
-            'recipient'          => 'required|string|max:255',
-            'comment'            => 'nullable|string',
-            'items'              => 'required|array|min:1',
+            'invoice_date' => 'required|date',
+            'recipient' => 'required|string|max:255',
+            'comment' => 'nullable|string',
+            'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity'   => 'required|numeric|min:0.01',
+            'items.*.quantity' => 'required|numeric|min:0.01',
         ]);
 
         $invoice = OutgoingInvoice::create([
             'invoice_number' => OutgoingInvoice::generateNumber(),
-            'invoice_date'   => $request->invoice_date,
-            'recipient'      => $request->recipient,
-            'user_id'        => auth()->id(),
-            'comment'        => $request->comment,
-            'status'         => 'draft',
+            'invoice_date' => $request->invoice_date,
+            'recipient' => $request->recipient,
+            'user_id' => auth()->id(),
+            'comment' => $request->comment,
+            'status' => 'draft',
         ]);
 
         foreach ($request->items as $item) {
             $invoice->items()->create([
                 'product_id' => $item['product_id'],
-                'quantity'   => $item['quantity'],
+                'quantity' => $item['quantity'],
             ]);
         }
 
@@ -71,9 +67,7 @@ class OutgoingInvoiceController extends Controller
     {
         $this->authorize('update', $invoice);
 
-        $products = Product::with('unit')
-            ->orderBy('name')
-            ->get();
+        $products = Product::with('unit')->orderBy('name')->get();
 
         $invoice->load('items');
 
@@ -85,18 +79,18 @@ class OutgoingInvoiceController extends Controller
         $this->authorize('update', $invoice);
 
         $request->validate([
-            'invoice_date'       => 'required|date',
-            'recipient'          => 'required|string|max:255',
-            'comment'            => 'nullable|string',
-            'items'              => 'required|array|min:1',
+            'invoice_date' => 'required|date',
+            'recipient' => 'required|string|max:255',
+            'comment' => 'nullable|string',
+            'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity'   => 'required|numeric|min:0.01',
+            'items.*.quantity' => 'required|numeric|min:0.01',
         ]);
 
         $invoice->update([
             'invoice_date' => $request->invoice_date,
-            'recipient'    => $request->recipient,
-            'comment'      => $request->comment,
+            'recipient' => $request->recipient,
+            'comment' => $request->comment,
         ]);
 
         $invoice->items()->delete();
@@ -135,8 +129,7 @@ class OutgoingInvoiceController extends Controller
         foreach ($invoice->items as $item) {
             if ($item->product->stock_quantity < $item->quantity) {
                 return redirect()->back()
-                    ->with('error',
-                        "Недостаточно товара «{$item->product->name}»: " .
+                    ->with('error',"Недостаточно товара «{$item->product->name}»: " .
                         "на складе {$item->product->stock_quantity} {$item->product->unit->abbreviation}, " .
                         "запрошено {$item->quantity}."
                     );

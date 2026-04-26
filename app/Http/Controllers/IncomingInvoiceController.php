@@ -13,9 +13,7 @@ class IncomingInvoiceController extends Controller
 {
     public function index()
     {
-        $invoices = IncomingInvoice::with(['supplier', 'user'])
-            ->latest()
-            ->paginate(15);
+        $invoices = IncomingInvoice::with(['supplier', 'user'])->latest()->paginate(15);
 
         return view('incoming.invoices.index', compact('invoices'));
     }

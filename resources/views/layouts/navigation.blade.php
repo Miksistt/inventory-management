@@ -32,6 +32,11 @@
                             {{ __('Расходные') }}
                         </x-nav-link>
                     @endcan
+                    @can('view-reports')
+                        <x-nav-link :href="route('history.index')" :active="request()->routeIs('history.*')">
+                            {{ __('История') }}
+                        </x-nav-link>
+                    @endcan
                 </div>
             </div>
 
@@ -88,6 +93,11 @@
             @can('manage-inventory')
                 <x-responsive-nav-link :href="route('outgoing.invoices.index')" :active="request()->routeIs('outgoing.*')">
                     {{ __('Расходные') }}
+                </x-responsive-nav-link>
+            @endcan
+            @can('view-reports')
+                <x-responsive-nav-link :href="route('history.index')" :active="request()->routeIs('history.*')">
+                    {{ __('История') }}
                 </x-responsive-nav-link>
             @endcan
         </div>

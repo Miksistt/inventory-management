@@ -50,7 +50,8 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
-        return redirect()->route('admin.categories.index')->with('success', 'Категория обновлена');
+        return redirect()->route('admin.categories.index')
+            ->with('success', 'Категория обновлена');
     }
 
     public function destroy(Category $category)
@@ -62,6 +63,7 @@ class CategoryController extends Controller
 
         $category->delete();
 
-        return redirect()->route('admin.categories.index')->with('success', 'Категория удалена');
+        return redirect()->route('admin.categories.index')
+            ->with('success', 'Категория удалена');
     }
 }
