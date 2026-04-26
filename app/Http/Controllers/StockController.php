@@ -12,27 +12,20 @@ class StockController extends Controller
     {
         $query = Product::with(['category', 'unit']);
 
-        if ($request->filled('category')) {
-            $query->where('category_id', $request->input('category'));
-        }
+        if ($request->filled('category')) {$query->where('category_id', $request->input('category'));}
 
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
+        if ($request->filled('search')) { $search = $request->input('search');
+            $query->where(function ($q) use ($search) { $q->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%");
             });
         }
 
         if ($request->filled('stock_filter')) {
             $filter = $request->input('stock_filter');
-            if ($filter === 'critical') {
-                $query->where('stock_quantity', 0);
-            } elseif ($filter === 'low') {
-                $query->whereColumn('stock_quantity', '<=', 'min_stock')->where('stock_quantity', '>', 0);
-            } elseif ($filter === 'normal') {
-                $query->whereColumn('stock_quantity', '>', 'min_stock');
-            }
+            if ($filter === 'critical') {$query->where('stock_quantity', 0);}
+            elseif ($filter === 'low') {$query->whereColumn('stock_quantity', '<=', 'min_stock')
+                    ->where('stock_quantity', '>', 0);}
+            elseif ($filter === 'normal') {$query->whereColumn('stock_quantity', '>', 'min_stock');}
         }
 
         $sort = $request->input('sort', 'name');

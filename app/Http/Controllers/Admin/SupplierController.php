@@ -32,7 +32,8 @@ class SupplierController extends Controller
 
         Supplier::create($validated);
 
-        return redirect()->route('admin.suppliers.index')->with('success', 'Поставщик создан');
+        return redirect()->route('admin.suppliers.index')
+            ->with('success', 'Поставщик создан');
     }
 
     public function show(Supplier $supplier)
@@ -57,7 +58,8 @@ class SupplierController extends Controller
 
         $supplier->update($validated);
 
-        return redirect()->route('admin.suppliers.index')->with('success', 'Поставщик обновлён');
+        return redirect()->route('admin.suppliers.index')
+            ->with('success', 'Поставщик обновлён');
     }
 
     public function destroy(Supplier $supplier)

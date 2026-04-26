@@ -12,16 +12,13 @@ class ProductController extends Controller
     {
         $query = Product::with(['category', 'unit']);
 
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
+        if ($request->filled('search')) { $search = $request->input('search');
+            $query->where(function ($q) use ($search) { $q->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%");
             });
         }
 
-        if ($request->filled('category')) {
-            $query->where('category_id', $request->input('category'));
+        if ($request->filled('category')) { $query->where('category_id', $request->input('category'));
         }
 
         $products = $query->orderBy('name')->paginate(12);

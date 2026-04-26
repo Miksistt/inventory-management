@@ -28,7 +28,8 @@ class UnitController extends Controller
 
         Unit::create($validated);
 
-        return redirect()->route('admin.units.index')->with('success', 'Единица измерения создана');
+        return redirect()->route('admin.units.index')
+            ->with('success', 'Единица измерения создана');
     }
 
     public function show(Unit $unit)
@@ -50,7 +51,8 @@ class UnitController extends Controller
 
         $unit->update($validated);
 
-        return redirect()->route('admin.units.index')->with('success', 'Единица измерения обновлена');
+        return redirect()->route('admin.units.index')
+            ->with('success', 'Единица измерения обновлена');
     }
 
     public function destroy(Unit $unit)

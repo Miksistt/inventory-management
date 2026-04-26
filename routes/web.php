@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\IncomingInvoiceController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HistoryController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\UnitController;
@@ -17,7 +18,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
@@ -26,7 +26,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
 
     Route::prefix('incoming')->name('incoming.')->middleware('can:manage-inventory')->group(function () {
         Route::resource('invoices', IncomingInvoiceController::class);
@@ -41,6 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
     Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
+    Route::get('/history', [HistoryController::class, 'index'])
+        ->middleware('can:view-reports')
+        ->name('history.index');
 
     Route::prefix('outgoing')->name('outgoing.')->middleware('can:manage-inventory')->group(function () {
         Route::resource('invoices', OutgoingInvoiceController::class);
