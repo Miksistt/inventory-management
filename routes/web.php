@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\IncomingInvoiceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\UnitController;
@@ -43,6 +44,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/history', [HistoryController::class, 'index'])
         ->middleware('can:view-reports')
         ->name('history.index');
+
+    Route::prefix('reports')->name('reports.')->middleware('can:view-reports')->group(function () {
+        Route::get('/stock', [ReportController::class, 'stock'])->name('stock');
+        Route::get('/incoming', [ReportController::class, 'incoming'])->name('incoming');
+        Route::get('/outgoing', [ReportController::class, 'outgoing'])->name('outgoing');
+        Route::get('/suppliers', [ReportController::class, 'suppliers'])->name('suppliers');
+    });
 
     Route::prefix('outgoing')->name('outgoing.')->middleware('can:manage-inventory')->group(function () {
         Route::resource('invoices', OutgoingInvoiceController::class);
