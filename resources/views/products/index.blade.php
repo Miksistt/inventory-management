@@ -4,8 +4,6 @@
 @section('content')
     <div class="container">
         <h1 class="mb-4">Каталог товаров</h1>
-        ...
-
         <div class="card mb-4">
             <div class="card-body">
                 <form method="GET" action="{{ route('products.index') }}" class="row g-3">
@@ -24,7 +22,7 @@
                     </div>
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-search"></i> Найти
+                            Найти
                         </button>
                     </div>
                 </form>
@@ -53,7 +51,7 @@
                                 </li>
                             </ul>
                             <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary">
-                                <i class="bi bi-info-circle"></i> Подробнее
+                                Подробнее
                             </a>
                         </div>
                     </div>

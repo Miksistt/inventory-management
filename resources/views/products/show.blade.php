@@ -54,7 +54,7 @@
                     <div class="col-md-4">
                         <div class="card">
                             <div class="card-header">
-                                <i class="bi bi-info-circle"></i> Информация
+                                Информация
                             </div>
                             <div class="card-body">
                                 <p><strong>ID товара:</strong> {{ $product->id }}</p>
@@ -67,7 +67,7 @@
             </div>
             <div class="card-footer">
                 <a href="{{ route('products.index') }}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Назад к каталогу
+                    Назад к каталогу
                 </a>
             </div>
         </div>

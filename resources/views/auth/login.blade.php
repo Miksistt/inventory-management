@@ -1,47 +1,83 @@
-<x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Вход — {{ config('app.name', 'Inventory') }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="bg-dark min-vh-100 d-flex align-items-center">
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <div class="text-center mb-4">
+                <i class="bi bi-box-seam text-white" style="font-size: 3rem;"></i>
+                <h2 class="text-white mt-2 fw-bold">Inventory</h2>
+                <p class="text-secondary">Система управления складом</p>
+            </div>
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h5 class="card-title text-center mb-4">Вход в систему</h5>
+
+                    @if(session('status'))
+                        <div class="alert alert-success">{{ session('status') }}</div>
+                    @endif
+
+                    <form method="POST" action="{{ route('login') }}">
+                        @csrf
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" id="email" name="email"
+                                   class="form-control @error('email') is-invalid @enderror"
+                                   value="{{ old('email') }}" required autofocus>
+                            @error('email')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Пароль</label>
+                            <input type="password" id="password" name="password"
+                                   class="form-control @error('password') is-invalid @enderror"
+                                   required>
+                            @error('password')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input"
+                                   id="remember_me" name="remember">
+                            <label class="form-check-label" for="remember_me">
+                                Запомнить меня
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            Войти
+                        </button>
+
+                        @if(Route::has('password.request'))
+                            <div class="text-center mt-3">
+                                <a href="{{ route('password.request') }}" class="text-muted small">
+                                    Забыли пароль?
+                                </a>
+                            </div>
+                        @endif
+                    </form>
+                </div>
+            </div>
+
+            <p class="text-center text-secondary small mt-3">
+                © {{ date('Y') }} Inventory Management System
+            </p>
         </div>
+    </div>
+</div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
-
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+</body>
+</html>
