@@ -51,6 +51,17 @@
                     </tr>
                 @endforelse
                 </tbody>
+                @if($suppliers->isNotEmpty())
+                    <tfoot class="table-light">
+                    <tr>
+                        <td colspan="2" class="fw-bold">Итого</td>
+                        <td class="text-center fw-bold">{{ $suppliers->sum('invoices_count') }}</td>
+                        <td class="text-end fw-bold">
+                            {{ number_format($suppliers->sum('total_amount'), 2, '.', ' ') }} ₽
+                        </td>
+                    </tr>
+                    </tfoot>
+                @endif
             </table>
         </div>
     </div>

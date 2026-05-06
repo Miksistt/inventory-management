@@ -57,8 +57,14 @@ class UnitController extends Controller
 
     public function destroy(Unit $unit)
     {
-        $unit->delete();
+        try {
+            $unit->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->back()
+                ->with('error', 'Нельзя удалить единицу измерения: она используется в товарах.');
+        }
 
-        return redirect()->route('admin.units.index')->with('success', 'Единица измерения удалена');
+        return redirect()->route('admin.units.index')
+            ->with('success', 'Единица измерения удалена');
     }
 }

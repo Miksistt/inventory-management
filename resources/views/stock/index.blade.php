@@ -30,7 +30,7 @@
                     </div>
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-funnel"></i> Фильтр
+                            Фильтр
                         </button>
                     </div>
                 </form>

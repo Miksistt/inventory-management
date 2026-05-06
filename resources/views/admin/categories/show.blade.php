@@ -7,10 +7,10 @@
         <h1>{{ $category->name }}</h1>
         <div>
             <a href="{{ route('admin.categories.edit', $category) }}" class="btn btn-warning">
-                <i class="bi bi-pencil"></i> Редактировать
+                Редактировать
             </a>
             <a href="{{ route('admin.categories.index') }}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Назад
+                Назад
             </a>
         </div>
     </div>
@@ -44,7 +44,7 @@
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-danger">
-                    <i class="bi bi-trash"></i> Удалить категорию
+                    Удалить категорию
                 </button>
             </form>
         </div>

@@ -28,16 +28,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::prefix('incoming')->name('incoming.')->middleware('can:manage-inventory')->group(function () {
-        Route::resource('invoices', IncomingInvoiceController::class);
-        Route::post('invoices/{invoice}/post', [IncomingInvoiceController::class, 'post'])
-            ->name('invoices.post');
-        Route::post('invoices/{invoice}/cancel', [IncomingInvoiceController::class, 'cancel'])
-            ->name('invoices.cancel');
-    });
-});
-
-Route::middleware('auth')->group(function () {
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
     Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
@@ -45,11 +35,12 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:view-reports')
         ->name('history.index');
 
-    Route::prefix('reports')->name('reports.')->middleware('can:view-reports')->group(function () {
-        Route::get('/stock', [ReportController::class, 'stock'])->name('stock');
-        Route::get('/incoming', [ReportController::class, 'incoming'])->name('incoming');
-        Route::get('/outgoing', [ReportController::class, 'outgoing'])->name('outgoing');
-        Route::get('/suppliers', [ReportController::class, 'suppliers'])->name('suppliers');
+    Route::prefix('incoming')->name('incoming.')->middleware('can:manage-inventory')->group(function () {
+        Route::resource('invoices', IncomingInvoiceController::class);
+        Route::post('invoices/{invoice}/post', [IncomingInvoiceController::class, 'post'])
+            ->name('invoices.post');
+        Route::post('invoices/{invoice}/cancel', [IncomingInvoiceController::class, 'cancel'])
+            ->name('invoices.cancel');
     });
 
     Route::prefix('outgoing')->name('outgoing.')->middleware('can:manage-inventory')->group(function () {
@@ -58,6 +49,13 @@ Route::middleware('auth')->group(function () {
             ->name('invoices.post');
         Route::post('invoices/{invoice}/cancel', [OutgoingInvoiceController::class, 'cancel'])
             ->name('invoices.cancel');
+    });
+
+    Route::prefix('reports')->name('reports.')->middleware('can:view-reports')->group(function () {
+        Route::get('/stock', [ReportController::class, 'stock'])->name('stock');
+        Route::get('/incoming', [ReportController::class, 'incoming'])->name('incoming');
+        Route::get('/outgoing', [ReportController::class, 'outgoing'])->name('outgoing');
+        Route::get('/suppliers', [ReportController::class, 'suppliers'])->name('suppliers');
     });
 });
 

@@ -61,6 +61,14 @@
                     </tr>
                 @endforelse
                 </tbody>
+                @if($totalCount > 0)
+                    <tfoot class="table-light">
+                    <tr>
+                        <td colspan="4" class="fw-bold">Итого накладных</td>
+                        <td class="text-center fw-bold">{{ $totalCount }}</td>
+                    </tr>
+                    </tfoot>
+                @endif
             </table>
         </div>
     </div>

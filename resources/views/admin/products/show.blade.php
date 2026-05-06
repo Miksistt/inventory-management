@@ -7,10 +7,10 @@
         <h1>{{ $product->name }}</h1>
         <div>
             <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-warning">
-                <i class="bi bi-pencil"></i> Редактировать
+                Редактировать
             </a>
             <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Назад
+                Назад
             </a>
         </div>
     </div>
@@ -72,7 +72,7 @@
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-danger">
-                    <i class="bi bi-trash"></i> Удалить товар
+                    Удалить товар
                 </button>
             </form>
         </div>
